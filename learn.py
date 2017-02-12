@@ -5,19 +5,21 @@ import os
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
-TRAIN_PATH = 'data/input/64/train_small'
-TEST_PATH  = 'data/input/64/test_small'
-# TRAIN_PATH = 'data/input/64/train'
-# TEST_PATH  = 'data/input/64/test'
+# TRAIN_PATH = 'data/input/64/train_small'
+# TEST_PATH  = 'data/input/64/test_small'
+TRAIN_PATH = 'data/input/64/train'
+TEST_PATH  = 'data/input/64/test'
 CATES = ['dog', 'cat']
 NUM_LABELS = len(CATES)
 IMG_SIZE = 64 * 64
 IMG_SUFFIX = 'jpg'
 BATCH_SIZE = 5 # num of img each train iter
+DEBUG = True
 
 def read_images_labels(path, part_range, categories = CATES):
     images = []
     labels = []
+    files = []
     for file in os.listdir(path):
         if IMG_SUFFIX in file:
             if path == TRAIN_PATH:
@@ -25,7 +27,6 @@ def read_images_labels(path, part_range, categories = CATES):
                 label = categories.index(category)
                 if int(index) not in part_range:
                     continue
-                labels.append(label)
             elif path == TEST_PATH:
                 index, suffix = file.split('.')
                 if int(index) not in part_range:
@@ -34,6 +35,8 @@ def read_images_labels(path, part_range, categories = CATES):
             img = pic[:,:,0] # gray channel
             flat_img = img.reshape(img.shape[0]*img.shape[1])
             images.append(np.float32(flat_img)/128.0)
+            labels.append(label)
+            files.append(file)
     return np.array(images), np.eye(len(categories))[labels]
 
 def num_images(path):
@@ -50,9 +53,9 @@ y = tf.nn.softmax(tf.matmul(x, W) + b) # n * NUM_LABELS
 
 y_ = tf.placeholder(tf.float32, [None, NUM_LABELS]) # n * NUM_LABELS
 
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1])) # reduce_sum accum second dim of its param
+cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y))) # reduce_sum accum second dim of its param
 
-train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+train_step = tf.train.GradientDescentOptimizer(learning_rate=.00001).minimize(cross_entropy)
 
 init = tf.global_variables_initializer()
 
@@ -75,13 +78,11 @@ train_ranges, test_ranges = train_test_ranges(0.7)
 for rang in train_ranges:
     step = train_ranges.index(rang)
     batch_xs, batch_ys = read_images_labels(TRAIN_PATH, rang)
-    if step % 2 == 0:
+    if step % 20 == 1:
         correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-        print('step:%d accuracy:%.4f' % (step, sess.run(accuracy, feed_dict={x: batch_xs, y_: batch_ys})))
-        print('step:%d range:%s' % (step, rang))
-        print('batch_ys:%s' % batch_ys)
-        print('y:%s' % (sess.run(y, feed_dict={x: batch_xs})))
+        print('step:%d range:%s accuracy:%.4f' % (step, rang, sess.run(accuracy, feed_dict={x: batch_xs, y_: batch_ys})))
+        if DEBUG: print('learned: \nb:\n%s \nW:\n%s \ny:\n%s' % (sess.run(b), sess.run(W), sess.run(y, feed_dict={x: batch_xs})))
     sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
     
 # Evaluation
