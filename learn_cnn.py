@@ -3,12 +3,11 @@ from scipy import ndimage,misc
 import numpy as np
 import os
 import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
 
-# TRAIN_PATH = 'data/input/64/train_small'
-# TEST_PATH  = 'data/input/64/test_small'
-TRAIN_PATH = 'data/input/64/train'
-TEST_PATH  = 'data/input/64/test'
+TRAIN_PATH = 'data/input/64/train_small'
+TEST_PATH  = 'data/input/64/test_small'
+# TRAIN_PATH = 'data/input/64/train'
+# TEST_PATH  = 'data/input/64/test'
 CATES = ['dog', 'cat']
 NUM_LABELS = len(CATES)
 IMG_W = 64
@@ -89,7 +88,7 @@ y = tf.nn.relu(tf.matmul(h_pool1_flat, W_fc1) + b_fc1)
 y_ = tf.placeholder(tf.float32, [None, NUM_LABELS]) # n * NUM_LABELS
 
 # cost
-cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
+cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y, labels=y_))
 
 #train
 train_step = tf.train.AdamOptimizer(1e-5).minimize(cross_entropy)

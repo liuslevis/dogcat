@@ -2,6 +2,10 @@
 
 Build CNN using tensorflow to tell wether a image contains dog or cat.
 
+# Environment
+
+Python3.5, tensorflow-1.0 (sudo pip3 install tensorflow)
+
 # Dataset
 
 https://www.kaggle.com/c/dogs-vs-cats/data
