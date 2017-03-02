@@ -13,8 +13,7 @@ CATES = ['dog', 'cat']
 NUM_LABELS = len(CATES)
 IMG_SIZE = 64 * 64
 IMG_SUFFIX = 'jpg'
-BATCH_SIZE = 30 # num of img each train iter
-DEBUG = True
+BATCH_SIZE = 50 # num of img each train iter
 
 def read_images_labels(path, part_range, categories = CATES):
     images = []
@@ -86,7 +85,7 @@ h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
 # maxpool3 -> 8*8(img) * 128(channel)
 h_pool3 = max_pool_2x2(h_conv3)
 
-# dense connected area -> 256
+# fc1 -> 256
 W_fc1 = weight_variable([8*8*128, 256])
 b_fc1 = bias_variable([256])
 h_pool3_flat = tf.reshape(h_pool3, [-1, 8*8*128])
@@ -96,10 +95,18 @@ h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 # keep_prob = tf.placeholder(tf.float32)
 # h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
-# readout
-W_fc2 = weight_variable([256, 2])
-b_fc2 = bias_variable([2])
-y = tf.nn.softmax(tf.matmul(h_fc1, W_fc2) + b_fc2)
+# fc2
+W_fc2 = weight_variable([256, 64])
+b_fc2 = bias_variable([64])
+h_fc2 = tf.matmul(h_fc1, W_fc2) + b_fc2
+
+#fc3
+W_fc3 = weight_variable([64, 2])
+b_fc3 = bias_variable([2])
+h_fc3 = tf.matmul(h_fc2, W_fc3) + b_fc3
+
+#readout
+y = tf.nn.softmax(h_fc3)
 
 y_ = tf.placeholder(tf.float32, [None, NUM_LABELS]) # n * NUM_LABELS
 
@@ -132,10 +139,11 @@ for rang in train_ranges:
         correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
         print('step:%d %s accuracy:%.4f' % (step, rang, sess.run(accuracy, feed_dict={x: batch_xs, y_: batch_ys})))
-        DEBUG = False
+        DEBUG = True
         if DEBUG: 
-            print('learned:')
-            print(sess.run(y, feed_dict={x: batch_xs, y_: batch_ys}))
+            h_fc1_ = sess.run(h_fc1, feed_dict={x: batch_xs, y_: batch_ys})
+            out = sess.run(y, feed_dict={x: batch_xs, y_: batch_ys})
+            # print('learned:', out)
          
     sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
     
