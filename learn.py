@@ -13,8 +13,8 @@ CATES = ['dog', 'cat']
 NUM_LABELS = len(CATES)
 IMG_SIZE = 64 * 64
 IMG_SUFFIX = 'jpg'
-BATCH_SIZE = 5 # num of img each train iter
-DEBUG = True
+BATCH_SIZE = 50 # num of img each train iter
+DEBUG = False
 
 def read_images_labels(path, part_range, categories = CATES):
     images = []
@@ -55,7 +55,8 @@ y_ = tf.placeholder(tf.float32, [None, NUM_LABELS]) # n * NUM_LABELS
 
 cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y))) # reduce_sum accum second dim of its param
 
-train_step = tf.train.GradientDescentOptimizer(learning_rate=.00001).minimize(cross_entropy)
+# train_step = tf.train.GradientDescentOptimizer(learning_rate=.00001).minimize(cross_entropy)
+train_step = tf.train.AdamOptimizer(1e-6).minimize(cross_entropy)
 
 init = tf.global_variables_initializer()
 
@@ -65,7 +66,6 @@ sess.run(init)
 
 def train_test_ranges(train_proportion):
     iters = int(num_images(TRAIN_PATH) / BATCH_SIZE / NUM_LABELS)
-
     ranges = [range(i * BATCH_SIZE, (i+1) * BATCH_SIZE) for i in range(0, iters)]
     TRAIN_PART = 0.7
     split_index = int(len(ranges) * TRAIN_PART)
