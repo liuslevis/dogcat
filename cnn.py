@@ -5,13 +5,15 @@ import os
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
+IMG_H = IMG_W = 128
+IMG_SIZE = IMG_W * IMG_H
+
 # TRAIN_PATH = 'data/input/64/train_small'
 # TEST_PATH  = 'data/input/64/test_small'
-TRAIN_PATH = 'data/input/64/train'
-TEST_PATH  = 'data/input/64/test'
+TRAIN_PATH = 'data/input/%s/train' % IMG_H
+TEST_PATH  = 'data/input/%s/test'  % IMG_H
 CATES = ['dog', 'cat']
 NUM_LABELS = len(CATES)
-IMG_SIZE = 64 * 64
 IMG_SUFFIX = 'jpg'
 BATCH_SIZE = 50 # num of img each train iter
 
@@ -56,39 +58,39 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
         strides=[1, 2, 2, 1], padding='SAME')
 
-# n pieces of 64 * 64 imgs
+# n pieces of imgs
 x = tf.placeholder(tf.float32, [None, IMG_SIZE])
 
-x_image = tf.reshape(x, [-1,64,64,1])
+x_image = tf.reshape(x, [-1,IMG_W,IMG_H,1])
 
-# conv 1 -> 64*64*1(img) * 32(channel)
+# conv 1 -> img * 32(channel)
 W_conv1 = weight_variable([5, 5, 1, 32])
 b_conv1 = bias_variable([32])
 h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
 
-# maxpool 1, take max value of 2x2 area, -> 32*32(img) * 32(channel)
+# maxpool 1, take max value of 2x2 area, -> img/2 * 32(channel)
 h_pool1 = max_pool_2x2(h_conv1)
 
-# covn2 -> 32*32(img) * 64(channel)
+# covn2 -> img/2 * 64(channel)
 W_conv2 = weight_variable([5,5,32,64])
 b_conv2 = bias_variable([64])
 h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 
-# maxpool2 -> 16*16(img) * 64(channel)
+# maxpool2 -> img/4 * 64(channel)
 h_pool2 = max_pool_2x2(h_conv2)
 
-# conv3 -> 16*16(img) * 128(channel)
+# conv3 -> img/4 * 128(channel)
 W_conv3 = weight_variable([5,5,64,128])
 b_conv3 = bias_variable([128])
 h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
 
-# maxpool3 -> 8*8(img) * 128(channel)
+# maxpool3 -> img/8 * 128(channel)
 h_pool3 = max_pool_2x2(h_conv3)
 
 # fc1 -> 256
-W_fc1 = weight_variable([8*8*128, 256])
+W_fc1 = weight_variable([int(IMG_SIZE/8/8)*128, 256])
 b_fc1 = bias_variable([256])
-h_pool3_flat = tf.reshape(h_pool3, [-1, 8*8*128])
+h_pool3_flat = tf.reshape(h_pool3, [-1, int(IMG_SIZE/8/8)*128])
 h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
 # dropout avoid overfitting

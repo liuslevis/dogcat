@@ -16,7 +16,7 @@ https://www.kaggle.com/c/dogs-vs-cats/download/train.zip
 
 # Preprocess
 
-Use `python preprocess.py` to convert raw image to 64 * 64 in gray.
+Use `python3 preprocess.py` to convert raw image to n x n in gray.
 
 # Train
 
