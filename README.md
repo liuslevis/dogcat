@@ -21,6 +21,6 @@ Use `python3 preprocess.py` to convert raw image to n x n in gray.
 # Train
 
 ```
-FNAME=cnn.input64.conv3
+FNAME=cnn.input64.conv4
 python3 ${FNAME}.py > log/${FNAME}.log 2>&1 &; tail -f log/${FNAME}.log
 ```
