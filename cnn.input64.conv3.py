@@ -5,7 +5,7 @@ import os
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
-IMG_H = IMG_W = 128
+IMG_H = IMG_W = 64
 IMG_SIZE = IMG_W * IMG_H
 
 # TRAIN_PATH = 'data/input/64/train_small'
@@ -15,7 +15,12 @@ TEST_PATH  = 'data/input/%s/test'  % IMG_H
 CATES = ['dog', 'cat']
 NUM_LABELS = len(CATES)
 IMG_SUFFIX = 'jpg'
-BATCH_SIZE = 50 # num of img each train iter
+BATCH_SIZE = 150 # num of img each train iter
+OUTPUT_STEP = 1
+EPOCH = 10
+DEBUG = False
+TRAIN_PART = 0.7
+
 
 def read_images_labels(path, part_range, categories = CATES):
     images = []
@@ -88,9 +93,10 @@ h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
 h_pool3 = max_pool_2x2(h_conv3)
 
 # fc1 -> 256
-W_fc1 = weight_variable([int(IMG_SIZE/8/8)*128, 256])
+scale = 8 * 8
+W_fc1 = weight_variable([int(IMG_SIZE/scale)*128, 256])
 b_fc1 = bias_variable([256])
-h_pool3_flat = tf.reshape(h_pool3, [-1, int(IMG_SIZE/8/8)*128])
+h_pool3_flat = tf.reshape(h_pool3, [-1, int(IMG_SIZE/scale)*128])
 h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
 # dropout avoid overfitting
@@ -125,8 +131,7 @@ sess.run(init)
 
 def train_test_ranges(train_proportion):
     iters = int(num_images(TRAIN_PATH) / BATCH_SIZE / NUM_LABELS)
-    ranges = [range(i * BATCH_SIZE, (i+1) * BATCH_SIZE) for i in range(0, iters)]
-    TRAIN_PART = 0.7
+    ranges = [range(i * BATCH_SIZE, (i+1) * BATCH_SIZE) for i in range(iters)]
     split_index = int(len(ranges) * TRAIN_PART)
     train_ranges = ranges[:split_index]
     test_ranes = ranges[split_index:]
@@ -134,21 +139,28 @@ def train_test_ranges(train_proportion):
 
 train_ranges, test_ranges = train_test_ranges(0.7)
 
-for rang in train_ranges:
-    step = train_ranges.index(rang)
-    batch_xs, batch_ys = read_images_labels(TRAIN_PATH, rang)
-    if step % 2 == 1:
+for epoch in  range(EPOCH):
+    print('\nepoch %d' % epoch)
+    for rang in train_ranges:
+        step = train_ranges.index(rang)
+        batch_xs, batch_ys = read_images_labels(TRAIN_PATH, rang)
         correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-        print('step:%d %s accuracy:%.4f' % (step, rang, sess.run(accuracy, feed_dict={x: batch_xs, y_: batch_ys})))
-        DEBUG = True
+        acc = sess.run(accuracy, feed_dict={x: batch_xs, y_: batch_ys})
+        
+        if step % OUTPUT_STEP == 0:
+            print('step:%d %s accuracy:%.4f' % (step, rang, acc))
+        
         if DEBUG: 
             h_fc1_ = sess.run(h_fc1, feed_dict={x: batch_xs, y_: batch_ys})
-            out = sess.run(y, feed_dict={x: batch_xs, y_: batch_ys})
-            # print('learned:', out)
+            out = [
+                sess.run(y, feed_dict={x: batch_xs, y_: batch_ys}),
+                sess.run(W_fc1, feed_dict={x: batch_xs, y_: batch_ys}),
+            ]
+            print('learned:', out)
          
-    sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
-    
+        sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
+
 # Evaluation
 
 for rang in test_ranges[:1]:
